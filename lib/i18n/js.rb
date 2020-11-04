@@ -194,6 +194,12 @@ module I18n
       end
     end
 
+    def self.houdini_ts
+      config.fetch(:houdini_ts) do
+        false
+      end
+    end
+
     def self.fallbacks
       config.fetch(:fallbacks) do
         # default value
@@ -222,7 +228,8 @@ module I18n
       segment_options = Private::HashWithSymbolKeys.new({
         js_extend: js_extend,
         sort_translation_keys: sort_translation_keys?,
-        json_only: json_only
+        json_only: json_only,
+        houdini_ts: houdini_ts
       }).freeze
       segment_options.merge(options.slice(*Segment::OPTIONS))
     end

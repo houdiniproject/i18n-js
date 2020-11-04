@@ -1,0 +1,7 @@
+fallbacks: false
+houdini_ts: true
+translations:
+  - file: "tmp/i18n-js/bits.%{locale}.ts"
+    only:
+      - "*.date.formats.*"
+      - "*.number.currency.*"

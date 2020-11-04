@@ -1,13 +1,14 @@
 require "i18n/js/private/hash_with_symbol_keys"
 require "i18n/js/formatters/js"
 require "i18n/js/formatters/json"
+require "i18n/js/formatters/houdini_ts.rb"
 
 module I18n
   module JS
 
     # Class which enscapulates a translations hash and outputs a single JSON translation file
     class Segment
-      OPTIONS = [:namespace, :pretty_print, :js_extend, :prefix, :suffix, :sort_translation_keys, :json_only].freeze
+      OPTIONS = [:namespace, :pretty_print, :js_extend, :prefix, :suffix, :sort_translation_keys, :json_only, :houdini_ts].freeze
       LOCALE_INTERPOLATOR = /%\{locale\}/
 
       attr_reader *([:file, :translations] | OPTIONS)
@@ -28,6 +29,7 @@ module I18n
         @suffix       = options.key?(:suffix) ? options[:suffix] : nil
         @sort_translation_keys = options.key?(:sort_translation_keys) ? !!options[:sort_translation_keys] : true
         @json_only = options.key?(:json_only) ? !!options[:json_only] : false
+        @houdini_ts = options.key?(:houdini_ts) ? !!options[:houdini_ts] : false
       end
 
       # Saves JSON file containing translations
@@ -60,7 +62,9 @@ module I18n
       end
 
       def formatter
-        if @json_only
+        if @houdini_ts
+          Formatters::HoudiniTs.new(**formatter_options)
+        elsif @json_only
           Formatters::JSON.new(**formatter_options)
         else
           Formatters::JS.new(**formatter_options)
@@ -72,7 +76,8 @@ module I18n
           namespace: @namespace,
           pretty_print: @pretty_print,
           prefix: @prefix,
-          suffix: @suffix
+          suffix: @suffix,
+          houdini_ts: @houdini_ts
         }
       end
     end

@@ -1,0 +1,7 @@
+fallbacks: false
+houdini_ts: true
+translations:
+  - file: "tmp/i18n-js/%{locale}.ts"
+    only:
+      - '*.date.*'
+      - '*.admin.*'

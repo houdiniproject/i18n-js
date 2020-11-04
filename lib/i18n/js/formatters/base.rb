@@ -2,7 +2,7 @@ module I18n
   module JS
     module Formatters
       class Base
-        def initialize(js_extend: false, namespace: nil, pretty_print: false, prefix: nil, suffix: nil)
+        def initialize(js_extend: false, namespace: nil, pretty_print: false, prefix: nil, suffix: nil, **other)
           @js_extend    = js_extend
           @namespace    = namespace
           @pretty_print = pretty_print

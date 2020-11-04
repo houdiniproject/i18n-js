@@ -46,6 +46,14 @@ describe I18n::JS::Segment do
       end
     end
 
+    context "when houdini_ts is not set" do
+      subject { I18n::JS::Segment.new(file, translations) }
+
+      it "should default houdini_ts to false" do
+        expect(subject.houdini_ts).to be false
+      end
+    end
+
     context "when pretty_print is nil" do
       it "should set pretty_print to false" do
         expect(subject.pretty_print).to be false
@@ -137,6 +145,18 @@ MyNamespace.translations["fr"] = I18n.extend((MyNamespace.translations["fr"] || 
       end
     end
 
+    context "when file does not include %{locale} but is houdini_ts" do
+      it "should write the file" do
+        file_should_exist "segment.js"
+
+        expect(File.open(File.join(temp_path, "segment.js")){|f| f.read}).to eql <<-EOF
+MyNamespace.translations || (MyNamespace.translations = {});
+MyNamespace.translations["en"] = I18n.extend((MyNamespace.translations["en"] || {}), {"test":"Test"});
+MyNamespace.translations["fr"] = I18n.extend((MyNamespace.translations["fr"] || {}), {"test":"Test2"});
+        EOF
+      end
+    end
+
     context "when file includes %{locale}" do
       let(:file){ "tmp/i18n-js/%{locale}.js" }
 
@@ -212,6 +232,108 @@ MyNamespace.translations["en"] = I18n.extend((MyNamespace.translations["en"] || 
         expect(File.open(File.join(temp_path, "segment.js")){|f| f.read}).to eql <<-EOF
 MyNamespace.translations || (MyNamespace.translations = {});
 MyNamespace.translations["en"] = I18n.extend((MyNamespace.translations["en"] || {}), {"b":"Test","a":"Test"});
+        EOF
+      end
+    end
+  end
+
+  describe "#save! with houdini_ts" do
+    before { allow(I18n::JS).to receive(:export_i18n_js_dir_path).and_return(temp_path) }
+    let(:translations){ { en: { "test" => {"flatten" =>"Test %{one} and %{two}"}}, fr: { "test" => {"flatten" => "Test2 %{one} and %{two}" }} } }
+    before { subject.save! }
+    subject {I18n::JS::Segment.new(file, translations, options.merge({houdini_ts:true}))}
+
+    context "when file does not include %{locale}" do
+      it "should write the file" do
+        file_should_exist "segment.js"
+
+        expect(File.open(File.join(temp_path, "segment.js")){|f| f.read}).to eql <<-EOF
+translations["en"] = {"test.flatten":"Test ${one} and ${two}"};
+translations["fr"] = {"test.flatten":"Test2 ${one} and ${two}"};
+        EOF
+      end
+    end
+
+    context "when file does not include %{locale} but is houdini_ts" do
+      it "should write the file" do
+        file_should_exist "segment.js"
+
+        expect(File.open(File.join(temp_path, "segment.js")){|f| f.read}).to eql <<-EOF
+translations["en"] = {"test.flatten":"Test ${one} and ${two}"};
+translations["fr"] = {"test.flatten":"Test2 ${one} and ${two}"};
+        EOF
+      end
+    end
+
+    context "when file includes %{locale}" do
+      let(:file){ "tmp/i18n-js/%{locale}.js" }
+
+      it "should write files" do
+        file_should_exist "en.js"
+        file_should_exist "fr.js"
+
+        expect(File.open(File.join(temp_path, "en.js")){|f| f.read}).to eql <<-EOF
+translations["en"] = {"test.flatten":"Test ${one} and ${two}"};
+        EOF
+
+        expect(File.open(File.join(temp_path, "fr.js")){|f| f.read}).to eql <<-EOF
+translations["fr"] = {"test.flatten":"Test2 ${one} and ${two}"};
+        EOF
+      end
+    end
+
+    context "when js_extend is true" do
+      let(:js_extend){ true }
+
+      let(:translations){ { en: { "b" => "Test", "a" => "Test" } } }
+
+      it 'should output the keys as sorted' do
+        file_should_exist "segment.js"
+
+        expect(File.open(File.join(temp_path, "segment.js")){|f| f.read}).to eql <<-EOF
+translations["en"] = {"a":"Test","b":"Test"};
+        EOF
+      end
+    end
+
+    context "when js_extend is false" do
+      let(:js_extend){ false }
+
+      let(:translations){ { en: { "b" => "Test", "a" => "Test" } } }
+
+      it 'should output the keys as sorted' do
+        file_should_exist "segment.js"
+
+        expect(File.open(File.join(temp_path, "segment.js")){|f| f.read}).to eql <<-EOF
+translations["en"] = {"a":"Test","b":"Test"};
+        EOF
+      end
+    end
+
+    context "when sort_translation_keys is true" do
+      let(:sort_translation_keys){ true }
+
+      let(:translations){ { en: { "b" => "Test", "a" => "Test" } } }
+
+      it 'should output the keys as sorted' do
+        file_should_exist "segment.js"
+
+        expect(File.open(File.join(temp_path, "segment.js")){|f| f.read}).to eql <<-EOF
+translations["en"] = {"a":"Test","b":"Test"};
+        EOF
+      end
+    end
+
+    context "when sort_translation_keys is false" do
+      let(:sort_translation_keys){ false }
+
+      let(:translations){ { en: { "b" => "Test", "a" => "Test" } } }
+
+      it 'should output the keys as sorted' do
+        file_should_exist "segment.js"
+
+        expect(File.open(File.join(temp_path, "segment.js")){|f| f.read}).to eql <<-EOF
+translations["en"] = {"b":"Test","a":"Test"};
         EOF
       end
     end
